@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "/psm";
+
+package process_manager;
+
+message KeyboardType{
+    enum KeyboardLayout{
+        UNKNOWN = 0;
+        QWERTY = 1;
+        QWERTZ = 2;
+        AZERTY = 3;
+    }
+    KeyboardLayout layout = 1;
+    bool backlit = 2;
+}
