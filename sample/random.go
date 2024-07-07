@@ -3,6 +3,8 @@ package sample
 import (
 	"grpc/psm"
 	"math/rand"
+
+	"github.com/google/uuid"
 )
 
 //KeyboardRandomizer
@@ -46,3 +48,18 @@ func randomScreenMultiTouch() bool {
 }
 
 // Memory Randomizer
+
+func randomMemory() *psm.Memory {
+	return &psm.Memory{
+		Value: uint64(4 + rand.Intn(64)),
+		Unit:  psm.Memory_GIGABYTE,
+	}
+}
+
+func randomStorageDriver() psm.Storage_Driver {
+	return psm.Storage_Driver(1 + rand.Intn(2))
+}
+
+func randomUUID() string {
+	return uuid.New().String()
+}

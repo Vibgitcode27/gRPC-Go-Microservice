@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	fmt.Println(sample.Display())
+	fmt.Println(sample.Laptop())
 }
