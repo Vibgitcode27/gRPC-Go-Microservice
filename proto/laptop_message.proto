@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option go_package = "/psm";
+
+package process_manager;
+
+import "proto/memory_message.proto";
+import "proto/keyboard_message.proto";
+import "proto/storage_message.proto";
+import "proto/screen_message.proto";
+import "proto/process_manager.proto";
+import "google/protobuf/timestamp.proto";
+
+message Laptop{
+    string id = 1;
+    string brand = 2;
+    string name = 3;
+    CPU cpu = 4;
+    repeated GPU gpu = 5;
+    Memory ram = 6;
+    KeyboardType keyboard = 7;
+    repeated Storage storages = 8;
+    Screen screen = 9;
+    oneof weight{
+        double weight_kg = 10;
+        string weight_lbs = 11;
+    }
+    double price_inr = 12;
+    uint32 release_year = 13;
+    google.protobuf.Timestamp updated_at = 14;
+}
