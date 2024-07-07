@@ -4,9 +4,9 @@ option go_package = "/psm";
 
 package process_manager;
 
-import "memory_message.proto";
+import "proto/memory_message.proto";
 
-message Stora{
+message Storage{
     enum Driver{
         UNKNOWN = 0;
         HDD = 1;

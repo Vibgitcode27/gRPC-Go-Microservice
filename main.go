@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"grpc/sample"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	fmt.Println(sample.Display())
 }
