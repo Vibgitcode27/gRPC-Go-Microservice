@@ -1,0 +1,72 @@
+{
+  "id": "77af430e-b345-42dc-8e1c-7f2afa8b9263",
+  "brand": "Lenovo",
+  "name": "Thinkpad X1 Carbon",
+  "cpu": {
+    "brand": "Intel",
+    "name": "Core i7",
+    "cores": 6,
+    "threads": 0,
+    "min_ghz": 2.6,
+    "max_ghz": 4.5
+  },
+  "gpu": [
+    {
+      "brand": "NVIDIA",
+      "name": "GeForce GTX 1080",
+      "min_ghz": 1.6,
+      "max_ghz": 1.8,
+      "memory": {
+        "value": "41",
+        "unit": "GIGABYTE"
+      }
+    },
+    {
+      "brand": "NVIDIA",
+      "name": "GeForce GTX 1080",
+      "min_ghz": 1.6,
+      "max_ghz": 1.8,
+      "memory": {
+        "value": "45",
+        "unit": "GIGABYTE"
+      }
+    }
+  ],
+  "ram": {
+    "value": "44",
+    "unit": "GIGABYTE"
+  },
+  "keyboard": {
+    "layout": "AZERTY",
+    "backlit": true
+  },
+  "storages": [
+    {
+      "driver": "HDD",
+      "memory": {
+        "value": "58",
+        "unit": "GIGABYTE"
+      }
+    },
+    {
+      "driver": "HDD",
+      "memory": {
+        "value": "11",
+        "unit": "GIGABYTE"
+      }
+    }
+  ],
+  "screen": {
+    "size_inch": 61,
+    "resolution": {
+      "width": 5563,
+      "height": 2197
+    },
+    "panel": "LCD",
+    "multi_touch": false
+  },
+  "weight_kg": 1.25,
+  "price_inr": 200000,
+  "release_year": 2004,
+  "updated_at": "2024-07-07T10:37:57.324804286Z"
+}
