@@ -13,6 +13,7 @@ import (
 )
 
 type LaptopService struct {
+	psm.UnimplementedLaptopServiceServer
 	Store LaptopStore
 }
 
