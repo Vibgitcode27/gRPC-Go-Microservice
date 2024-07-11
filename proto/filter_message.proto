@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "/psm";
+
+package process_manager;
+
+import "proto/memory_message.proto";
+
+message Filter{
+    enum FilterLayout{
+        UNKNOWN = 0;
+        GREYSCALE = 1;
+        SEPIA = 2;
+        INVERT = 3;
+    }
+    double max_price_inr = 1;
+    uint32 min_cpu_cores = 2;
+    double min_cpu_ghz = 3;
+    Memory ram = 4;
+}

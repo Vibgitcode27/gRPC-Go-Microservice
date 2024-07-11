@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"grpc/psm"
+	"log"
 
 	// "grpc/service"
 	"github.com/google/uuid"
@@ -57,4 +58,27 @@ func (server *LaptopService) CreateLaptop(ctx context.Context, req *psm.CreateLa
 	return &psm.CreateLaptopResponse{
 		Id: laptop.Id,
 	}, nil
+}
+
+func (server *LaptopService) SearchLaptop(req *psm.SearchLaptopRequest, stream psm.LaptopService_SearchLaptopServer) error {
+	filter := req.GetFilter()
+	log.Printf("Receive a search-laptop request with filter: %v\n", filter)
+
+	err := server.Store.Search(filter, func(laptop *psm.Laptop) error {
+		res := &psm.SearchLaptopResponse{
+			Laptop: laptop,
+		}
+		err := stream.Send(res)
+		if err != nil {
+			return err
+		}
+		log.Printf("Sent all laptop Id with filter: %v\n", laptop.GetId())
+		return nil
+	})
+
+	if err != nil {
+		return status.Errorf(codes.Internal, "unexpected error: %v", err)
+	}
+
+	return nil
 }
