@@ -30,34 +30,34 @@ func TestServer(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name   string
-		laptop *psm.Laptop
-		store  service.LaptopStore
-		code   codes.Code
+		name        string
+		laptop      *psm.Laptop
+		laptopStore service.LaptopStore
+		code        codes.Code
 	}{
 		{
-			name:   "success_with_id",
-			laptop: sample.Laptop(),
-			store:  service.NewInMemoryLaptopStore(),
-			code:   codes.OK,
+			name:        "success_with_id",
+			laptop:      sample.Laptop(),
+			laptopStore: service.NewInMemoryLaptopStore(),
+
+			code: codes.OK,
 		},
 		{
-			name:   "success_no_id",
-			laptop: laptopNoId,
-			store:  service.NewInMemoryLaptopStore(),
-			code:   codes.OK,
+			name:        "success_no_id",
+			laptop:      laptopNoId,
+			laptopStore: service.NewInMemoryLaptopStore(), code: codes.OK,
 		},
 		{
-			name:   "failure_invalid_id",
-			laptop: laptopInvalidId,
-			store:  service.NewInMemoryLaptopStore(),
-			code:   codes.InvalidArgument,
+			name:        "failure_invalid_id",
+			laptop:      laptopInvalidId,
+			laptopStore: service.NewInMemoryLaptopStore(),
+			code:        codes.InvalidArgument,
 		},
 		{
-			name:   "failure_duplicate_id",
-			laptop: loadDuplicateId,
-			store:  storeDuplicateId,
-			code:   codes.AlreadyExists,
+			name:        "failure_duplicate_id",
+			laptop:      loadDuplicateId,
+			laptopStore: storeDuplicateId,
+			code:        codes.AlreadyExists,
 		},
 	}
 
@@ -71,7 +71,9 @@ func TestServer(t *testing.T) {
 				Laptop: tc.laptop,
 			}
 
-			server := service.NewLaptopService(tc.store)
+			imageStore := service.NewDiskImageStore("tmp")
+
+			server := service.NewLaptopService(tc.laptopStore, imageStore)
 			res, err := server.CreateLaptop(context.Background(), req)
 			if tc.code == codes.OK {
 				require.NoError(t, err)

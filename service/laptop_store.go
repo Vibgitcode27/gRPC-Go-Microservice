@@ -12,6 +12,7 @@ var ErrAlreadyExists = errors.New("laptop already exists")
 
 type LaptopStore interface {
 	Save(laptop *psm.Laptop) error
+	Find(id string) (*psm.Laptop, error)
 	// Find(id string) (*psm.Laptop, error)
 	Search(filter *psm.Filter, found func(laptop *psm.Laptop) error) error
 }

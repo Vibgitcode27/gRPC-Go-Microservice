@@ -23,7 +23,26 @@ message SearchLaptopResponse{
     Laptop laptop = 1;
 }
 
+message UploadImageRequest{
+    oneof data{
+        Image image = 1;
+        bytes chunk_data = 2;
+    }
+}
+
+message Image{
+    string image_id = 1;
+    string image_type = 2;
+}
+
+message UploadImageResponse{
+    string id = 1;
+    uint32 size = 2;
+}
+
+
 service LaptopService{
     rpc CreateLaptop(CreateLaptopRequest) returns (CreateLaptopResponse){};
     rpc SearchLaptop(SearchLaptopRequest) returns (stream SearchLaptopResponse){};
+    rpc UploadImage(stream UploadImageRequest) returns (UploadImageResponse){};
 }

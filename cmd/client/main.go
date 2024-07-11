@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
@@ -8,6 +9,8 @@ import (
 	"grpc/sample"
 	"io"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	"google.golang.org/grpc"
@@ -15,10 +18,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func CreateRandomLaptop(laptopClient psm.LaptopServiceClient) {
+func CreateRandomLaptop(laptopClient psm.LaptopServiceClient, laptop *psm.Laptop) {
 	fmt.Println("laptopClient", laptopClient)
 
-	laptop := sample.Laptop()
+	// laptop := sample.Laptop()
 
 	// laptop.Id = "invalid"
 
@@ -40,6 +43,89 @@ func CreateRandomLaptop(laptopClient psm.LaptopServiceClient) {
 	log.Printf("Created laptop with id: %s", res.Id)
 }
 
+func uploadImage(laptopClient psm.LaptopServiceClient, laptopID string, imagePath string) {
+	file, err := os.Open(imagePath)
+	if err != nil {
+		log.Fatal("Cannot open image file", err)
+	}
+	defer file.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	stream, err := laptopClient.UploadImage(ctx)
+	if err != nil {
+		log.Fatal("Cannot upload image", err)
+	}
+
+	req := &psm.UploadImageRequest{
+		Data: &psm.UploadImageRequest_Image{
+			Image: &psm.Image{
+				ImageId:   laptopID, // The image ID is the same as the laptop ID this is mistake I made in naming the field in proto file
+				ImageType: filepath.Ext(imagePath),
+			},
+		},
+	}
+
+	err = stream.Send(req)
+	if err != nil {
+		log.Fatal("Cannot send image", err)
+	}
+
+	reader := bufio.NewReader(file)
+	buffer := make([]byte, 1024)
+	for {
+		n, err := reader.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal("Cannot read chunk to buffer", err)
+		}
+
+		req := &psm.UploadImageRequest{
+			Data: &psm.UploadImageRequest_ChunkData{
+				ChunkData: buffer[:n],
+			},
+		}
+
+		err = stream.Send(req)
+		if err != nil {
+			err2 := stream.RecvMsg(nil)
+			log.Fatal("Cannot send chunk to server", err, err2)
+		}
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatal("Cannot receive response from server", err)
+	}
+
+	log.Printf("Image uploaded with id: %s, size: %d", res.Id, res.Size)
+
+}
+
+func testUploadImage(laptopClient psm.LaptopServiceClient) {
+	laptop := sample.Laptop()
+	CreateRandomLaptop(laptopClient, laptop)
+	uploadImage(laptopClient, laptop.GetId(), "tmp/laptop.jpg")
+}
+
+func testSearchLaptop(laptopClient psm.LaptopServiceClient) {
+	for i := 0; i < 5; i++ {
+		CreateRandomLaptop(laptopClient, sample.Laptop())
+	}
+
+	filter := &psm.Filter{
+		MaxPriceInr: 200000,
+		MinCpuCores: 2,
+		MinCpuGhz:   2.0,
+		Ram:         &psm.Memory{Value: 8, Unit: psm.Memory_GIGABYTE},
+	}
+
+	searchLaptop(laptopClient, filter)
+}
+
 func main() {
 	serverAddress := flag.String("address", "", "The server address in the format of host:port")
 	flag.Parse()
@@ -52,19 +138,9 @@ func main() {
 	}
 
 	laptopClient := psm.NewLaptopServiceClient(conn)
+	// testSearchLaptop(laptopClient)
+	testUploadImage(laptopClient)
 
-	for i := 0; i < 5; i++ {
-		CreateRandomLaptop(laptopClient)
-	}
-
-	filter := &psm.Filter{
-		MaxPriceInr: 150000,
-		MinCpuCores: 2,
-		MinCpuGhz:   2.0,
-		Ram:         &psm.Memory{Value: 8, Unit: psm.Memory_GIGABYTE},
-	}
-
-	searchLaptop(laptopClient, filter)
 }
 
 func searchLaptop(laptopClient psm.LaptopServiceClient, filter *psm.Filter) {
