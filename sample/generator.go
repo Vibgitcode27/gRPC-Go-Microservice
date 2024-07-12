@@ -2,6 +2,7 @@ package sample
 
 import (
 	"grpc/psm"
+	"math/rand"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -67,4 +68,8 @@ func Laptop() *psm.Laptop {
 		PriceInr:    200000,
 		UpdatedAt:   timestamppb.Now(),
 	}
+}
+
+func RandomLaptopScore() float64 {
+	return (float64)(1 + rand.Intn(10))
 }

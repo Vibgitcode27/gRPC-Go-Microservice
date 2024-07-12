@@ -21,10 +21,11 @@ type LaptopService struct {
 	psm.UnimplementedLaptopServiceServer
 	laptopStore LaptopStore
 	imageStore  ImageStore
+	ratingStore RatingStore
 }
 
-func NewLaptopService(laptopStore LaptopStore, imageStore ImageStore) *LaptopService {
-	return &LaptopService{laptopStore: laptopStore, imageStore: imageStore}
+func NewLaptopService(laptopStore LaptopStore, imageStore ImageStore, ratingStore RatingStore) *LaptopService {
+	return &LaptopService{laptopStore: laptopStore, imageStore: imageStore, ratingStore: ratingStore}
 }
 
 func (server *LaptopService) CreateLaptop(ctx context.Context, req *psm.CreateLaptopRequest) (*psm.CreateLaptopResponse, error) {
@@ -157,4 +158,64 @@ func (server *LaptopService) UploadImage(stream psm.LaptopService_UploadImageSer
 	log.Printf("Image with ID %s and size %d has been saved successfully", imageID, imageSize)
 
 	return nil
+}
+
+func (server *LaptopService) RateLaptop(stream psm.LaptopService_RateLaptopServer) error {
+
+	for {
+		err := contextError(stream.Context())
+		if err != nil {
+			return err
+		}
+
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Print("No more data")
+			break
+		}
+		if err != nil {
+			return status.Errorf(codes.Unknown, "cannot receive rating: %v", err)
+		}
+
+		laptopID := req.GetLaptopId()
+		score := req.GetScore()
+
+		log.Printf("Receive a rate-laptop request for laptop %s with score %.2f\n", laptopID, score)
+
+		found, err := server.laptopStore.Find(laptopID)
+		if err != nil {
+			return status.Errorf(codes.Internal, "cannot find laptop: %v", err)
+		}
+		if found == nil {
+			return status.Errorf(codes.NotFound, "laptop %s doesn't exist", laptopID)
+		}
+		rating, err := server.ratingStore.Add(laptopID, score)
+		if err != nil {
+			return status.Errorf(codes.Internal, "cannot add rating to store: %v", err)
+		}
+
+		res := &psm.RateLaptopResponse{
+			LaptopId:     laptopID,
+			RatedCount:   rating.Count,
+			AverageScore: rating.Sum / float64(rating.Count),
+		}
+
+		err = stream.Send(res)
+		if err != nil {
+			return status.Errorf(codes.Internal, "cannot send rating response: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func contextError(ctx context.Context) error {
+	switch ctx.Err() {
+	case context.Canceled:
+		return status.Error(codes.Canceled, "request is canceled")
+	case context.DeadlineExceeded:
+		return status.Error(codes.DeadlineExceeded, "deadline is exceeded")
+	default:
+		return nil
+	}
 }

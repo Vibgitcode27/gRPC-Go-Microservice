@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -139,7 +140,8 @@ func main() {
 
 	laptopClient := psm.NewLaptopServiceClient(conn)
 	// testSearchLaptop(laptopClient)
-	testUploadImage(laptopClient)
+	// testUploadImage(laptopClient)
+	testRateLaptop(laptopClient)
 
 }
 
@@ -179,4 +181,83 @@ func searchLaptop(laptopClient psm.LaptopServiceClient, filter *psm.Filter) {
 		log.Printf("Laptop CPU ghz: %f", laptop.GetCpu().GetMinGhz())
 		log.Printf("Laptop RAM: %d %s", laptop.GetRam().GetValue(), laptop.GetRam().GetUnit())
 	}
+}
+
+func rateLaptop(laptopClient psm.LaptopServiceClient, laptopIDs []string, scores []float64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	stream, err := laptopClient.RateLaptop(ctx)
+	if err != nil {
+		return err
+	}
+	waitResponse := make(chan error)
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				waitResponse <- nil
+				return
+			}
+			if err != nil {
+				waitResponse <- fmt.Errorf("Cannot receive response: %v", err)
+				return
+			}
+
+			log.Printf("Laptop with ID %s has average score: %f", res.GetLaptopId(), res.GetAverageScore())
+		}
+	}()
+
+	for i, laptopID := range laptopIDs {
+		req := &psm.RateLaptopRequest{
+			LaptopId: laptopID,
+			Score:    scores[i],
+		}
+
+		err := stream.Send(req)
+		if err != nil {
+			return fmt.Errorf("Cannot send stream request: %v - %v", err, stream.RecvMsg(nil))
+		}
+		log.Print("send request", req)
+	}
+
+	err = stream.CloseSend()
+	if err != nil {
+		return fmt.Errorf("Cannot close stream: %v", err)
+	}
+
+	err = <-waitResponse
+	return err
+}
+
+func testRateLaptop(laptopClient psm.LaptopServiceClient) {
+	n := 3
+	laptopIDs := make([]string, n)
+
+	for i := 0; i < n; i++ {
+		laptop := sample.Laptop()
+		CreateRandomLaptop(laptopClient, laptop)
+		laptopIDs[i] = laptop.GetId()
+	}
+
+	scores := make([]float64, n)
+	for i := 0; i < n; i++ {
+		fmt.Print("rate laptop (y/n)?")
+		var answer string
+		fmt.Scan(&answer)
+		if strings.ToLower(answer) != "y" {
+			break
+		}
+
+		for i := 0; i < n; i++ {
+			scores[i] = sample.RandomLaptopScore()
+		}
+
+		err := rateLaptop(laptopClient, laptopIDs, scores)
+		if err != nil {
+			log.Fatal("Cannot rate laptop", err)
+		}
+
+	}
+
 }
